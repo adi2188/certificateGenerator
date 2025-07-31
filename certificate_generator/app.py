@@ -41,8 +41,8 @@ def create_certificate(person_name, course_name, course_description, course_date
         pdf.image(background_image_path, x=0, y=0, w=210, h=297)
 
     # Header
-    pdf.set_y(20)
-    pdf.set_font(config['font_name'], 'B', 20)
+    pdf.set_y(30)
+    pdf.set_font(config['font_name'], 'BI', 20)
     pdf.set_text_color(*config['header_color'])
     pdf.cell(0, 10, config['header_text'], ln=True, align='C')
 
