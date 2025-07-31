@@ -96,13 +96,11 @@ class TestCertificateGenerator(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Successfully generated all certificates!", response.data) 
         self.assertIn(b"Processed 2 rows.", response.data) 
-        self.assertIn(b"AS-PythonProgramming-150123.pdf", response.data)
-        self.assertIn(b"BJ-AdvancedWebDevelopment-200223.pdf", response.data)
 
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("AS-PythonProgramming-150123.pdf", generated_files)
-        self.assertIn("BJ-AdvancedWebDevelopment-200223.pdf", generated_files)
+        self.assertTrue(any(f.startswith("AS-PythonProgramming-150123") for f in generated_files))
+        self.assertTrue(any(f.startswith("BJ-AdvancedWebDevelopment-200223") for f in generated_files))
 
     def test_upload_csv_missing_headers(self):
         data = {'csv_file': (BytesIO(CSV_MISSING_HEADER_CONTENT.encode('utf-8')), 'missing_headers.csv')}
@@ -131,8 +129,8 @@ class TestCertificateGenerator(unittest.TestCase):
         
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("ED-CybersecurityBasics-010523.pdf", generated_files)
-        self.assertIn("FG-CloudComputing-100623.pdf", generated_files)
+        self.assertTrue(any(f.startswith("ED-CybersecurityBasics-010523") for f in generated_files))
+        self.assertTrue(any(f.startswith("FG-CloudComputing-100623") for f in generated_files))
 
 
     def test_create_certificate_function(self):

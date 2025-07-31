@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from fpdf import FPDF
 import json
 from datetime import datetime
+import random
 
 app = Flask(__name__)
 app.secret_key = 'your secret key' # Needed for flashing messages
@@ -80,7 +81,8 @@ def create_certificate(person_name, course_name, course_description, course_date
     initials = get_initials(person_name)
     date_obj = datetime.strptime(course_date, '%Y-%m-%d')
     date_str = date_obj.strftime('%d%m%y')
-    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}"
+    random_num = random.randint(100000, 999999)
+    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}-{random_num}"
 
     pdf.set_y(config['certificate_id_y'])
     pdf.set_font(config['font_name'], "", 8)
@@ -162,7 +164,8 @@ def upload_file():
                     initials = get_initials(person_name)
                     date_obj = datetime.strptime(course_date, '%Y-%m-%d')
                     date_str = date_obj.strftime('%d%m%y')
-                    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}"
+                    random_num = random.randint(100000, 999999)
+                    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}-{random_num}"
 
                     output_filename = f"{certificate_id}.pdf"
                     output_path = os.path.join(app.config['GENERATED_PDFS_FOLDER'], output_filename)
