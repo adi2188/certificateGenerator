@@ -1,6 +1,8 @@
 import os
 import csv
 import logging
+import random
+from datetime import datetime
 from flask import Flask, request, current_app, render_template, url_for, send_from_directory, flash, redirect
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
@@ -24,7 +26,31 @@ app.config['GENERATED_PDFS_FOLDER'] = GENERATED_PDFS_FOLDER
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['GENERATED_PDFS_FOLDER'], exist_ok=True)
 
-def create_certificate(person_name, course_name, course_description, course_date, output_path):
+def generate_certificate_id(person_name, course_name, course_date):
+    """Generates a unique certificate ID."""
+    initials = "".join(part[0] for part in person_name.split()).upper()
+    sanitized_course_name = course_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+
+    # Attempt to parse date from multiple formats
+    date_obj = None
+    for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y'):
+        try:
+            date_obj = datetime.strptime(course_date, fmt)
+            break
+        except ValueError:
+            pass
+
+    if date_obj:
+        date_str = date_obj.strftime('%d%m%y')
+    else:
+        # Fallback if date format is not as expected
+        date_str = "000000"
+
+    random_digits = f"{random.randint(0, 999999):06d}"
+
+    return f"{initials}-{sanitized_course_name}-{date_str}-{random_digits}"
+
+def create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path):
     with open(os.path.join(app.root_path, 'config.json')) as f:
         config = json.load(f)
 
@@ -71,6 +97,12 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf.set_y(config['date_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, f"Date: {course_date}", ln=True, align="C")
+
+    # Certificate ID
+    pdf.set_y(-40)
+    pdf.set_font(config['font_name'], 'I', 8)
+    pdf.set_text_color(128, 128, 128) # Gray color
+    pdf.cell(0, 10, f"Certificate ID: {certificate_id}", ln=True, align='C')
     
     # Footer
     pdf.set_y(-30)
@@ -145,13 +177,11 @@ def upload_file():
                         failed_certificates_info.append(f"Row {i+1} (Person: {person_name or 'N/A'}) - Missing data")
                         continue
 
-                    sanitized_person_name = person_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
-                    sanitized_course_name = course_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
-                    
-                    output_filename = f"{sanitized_person_name}_{sanitized_course_name}_certificate.pdf"
+                    certificate_id = generate_certificate_id(person_name, course_name, course_date)
+                    output_filename = f"{certificate_id}.pdf"
                     output_path = os.path.join(app.config['GENERATED_PDFS_FOLDER'], output_filename)
                     
-                    create_certificate(person_name, course_name, course_description, course_date, output_path)
+                    create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path)
                     generated_filenames_list.append(output_filename)
                     logger.info(f"Generated certificate: {output_filename}")
 
