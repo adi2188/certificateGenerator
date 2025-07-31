@@ -4,6 +4,8 @@ import logging
 from flask import Flask, request, current_app, render_template, url_for, send_from_directory, flash, redirect
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'your secret key' # Needed for flashing messages
@@ -23,35 +25,73 @@ app.config['GENERATED_PDFS_FOLDER'] = GENERATED_PDFS_FOLDER
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['GENERATED_PDFS_FOLDER'], exist_ok=True)
 
+def get_initials(name):
+    return "".join([n[0] for n in name.split()])
+
 def create_certificate(person_name, course_name, course_description, course_date, output_path):
+    with open(os.path.join(app.root_path, 'config.json')) as f:
+        config = json.load(f)
+
     pdf = FPDF()
     pdf.add_page()
     
-    # Course Name
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 20, course_name, ln=True, align="C") 
+    # Set background color
+    pdf.set_fill_color(*config['background_color'])
+    pdf.rect(0, 0, 210, 297, 'F')
+
+    # Add background image
+    if 'background_image' in config and config['background_image']:
+        background_image_path = os.path.join(app.root_path, config['background_image'])
+        pdf.image(background_image_path, x=0, y=0, w=210, h=297)
+
+    # Header
+    pdf.set_y(20)
+    pdf.set_font(config['font_name'], 'B', 20)
+    pdf.set_text_color(*config['header_color'])
+    pdf.cell(0, 10, config['header_text'], ln=True, align='C')
+
+    # Certificate content
+    pdf.set_y(config['course_name_y'])
+    pdf.set_font(config['font_name'], "B", config['font_size_course_name'])
+    pdf.set_text_color(0,0,0)
+    pdf.cell(0, 10, course_name, ln=True, align="C")
     
-    # "This certificate is awarded to:"
-    pdf.set_font("Arial", "", 12)
+    pdf.set_y(config['award_text_y'])
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "This certificate is awarded to:", ln=True, align="C")
     
-    # Person's Name
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_y(config['person_name_y'])
+    pdf.set_font(config['font_name'], "B", config['font_size_person_name'])
     pdf.cell(0, 10, person_name, ln=True, align="C")
     
-    # "for successfully completing the course:"
-    pdf.set_font("Arial", "", 12)
+    pdf.set_y(config['completion_text_y'])
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "for successfully completing the course:", ln=True, align="C")
     
-    # Course Description
-    pdf.set_font("Arial", "I", 12)
+    pdf.set_y(config['course_description_y'])
+    pdf.set_font(config['font_name'], "I", config['font_size_default'])
     pdf.multi_cell(0, 10, course_description, align="C")
-    pdf.ln(5) 
     
-    # Course Date
-    pdf.set_font("Arial", "", 12)
+    pdf.set_y(config['date_y'])
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, f"Date: {course_date}", ln=True, align="C")
     
+    # Certificate ID
+    initials = get_initials(person_name)
+    date_obj = datetime.strptime(course_date, '%Y-%m-%d')
+    date_str = date_obj.strftime('%d%m%y')
+    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}"
+
+    pdf.set_y(config['certificate_id_y'])
+    pdf.set_font(config['font_name'], "", 8)
+    pdf.cell(0, 10, certificate_id, ln=True, align='C')
+
+    # Footer
+    pdf.set_y(-30)
+    pdf.set_font(config['font_name'], 'I', 10)
+    pdf.set_text_color(*config['footer_color'])
+    pdf.cell(0, 10, config['footer_text'], ln=True, align='C')
+
     pdf.output(output_path, "F")
 
 @app.route('/')
@@ -118,11 +158,13 @@ def upload_file():
                         logger.warning(f"Skipping row {i+1} due to missing data: {row}")
                         failed_certificates_info.append(f"Row {i+1} (Person: {person_name or 'N/A'}) - Missing data")
                         continue
-
-                    sanitized_person_name = person_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
-                    sanitized_course_name = course_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
                     
-                    output_filename = f"{sanitized_person_name}_{sanitized_course_name}_certificate.pdf"
+                    initials = get_initials(person_name)
+                    date_obj = datetime.strptime(course_date, '%Y-%m-%d')
+                    date_str = date_obj.strftime('%d%m%y')
+                    certificate_id = f"{initials}-{course_name.replace(' ', '')}-{date_str}"
+
+                    output_filename = f"{certificate_id}.pdf"
                     output_path = os.path.join(app.config['GENERATED_PDFS_FOLDER'], output_filename)
                     
                     create_certificate(person_name, course_name, course_description, course_date, output_path)

@@ -96,13 +96,13 @@ class TestCertificateGenerator(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Successfully generated all certificates!", response.data) 
         self.assertIn(b"Processed 2 rows.", response.data) 
-        self.assertIn(b"Alice_Smith_Python_Programming_certificate.pdf", response.data)
-        self.assertIn(b"Bob_Johnson_Advanced_Web_Development_certificate.pdf", response.data)
+        self.assertIn(b"AS-PythonProgramming-150123.pdf", response.data)
+        self.assertIn(b"BJ-AdvancedWebDevelopment-200223.pdf", response.data)
 
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("Alice_Smith_Python_Programming_certificate.pdf", generated_files)
-        self.assertIn("Bob_Johnson_Advanced_Web_Development_certificate.pdf", generated_files)
+        self.assertIn("AS-PythonProgramming-150123.pdf", generated_files)
+        self.assertIn("BJ-AdvancedWebDevelopment-200223.pdf", generated_files)
 
     def test_upload_csv_missing_headers(self):
         data = {'csv_file': (BytesIO(CSV_MISSING_HEADER_CONTENT.encode('utf-8')), 'missing_headers.csv')}
@@ -131,8 +131,8 @@ class TestCertificateGenerator(unittest.TestCase):
         
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("Eve_Davis_Cybersecurity_Basics_certificate.pdf", generated_files)
-        self.assertIn("Frank_Green_Cloud_Computing_certificate.pdf", generated_files)
+        self.assertIn("ED-CybersecurityBasics-010523.pdf", generated_files)
+        self.assertIn("FG-CloudComputing-100623.pdf", generated_files)
 
 
     def test_create_certificate_function(self):
