@@ -31,31 +31,48 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf = FPDF()
     pdf.add_page()
     
-    # Course Name
+    # Set background color
+    pdf.set_fill_color(*config['background_color'])
+    pdf.rect(0, 0, 210, 297, 'F')
+
+    # Header
+    pdf.set_y(20)
+    pdf.set_font(config['font_name'], 'B', 20)
+    pdf.set_text_color(*config['header_color'])
+    pdf.cell(0, 10, config['header_text'], ln=True, align='C')
+
+    # Certificate content
+    pdf.set_y(config['course_name_y'])
     pdf.set_font(config['font_name'], "B", config['font_size_course_name'])
-    pdf.cell(0, config['course_name_y'], course_name, ln=True, align="C")
+    pdf.set_text_color(0,0,0)
+    pdf.cell(0, 10, course_name, ln=True, align="C")
     
-    # "This certificate is awarded to:"
+    pdf.set_y(config['award_text_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "This certificate is awarded to:", ln=True, align="C")
     
-    # Person's Name
+    pdf.set_y(config['person_name_y'])
     pdf.set_font(config['font_name'], "B", config['font_size_person_name'])
     pdf.cell(0, 10, person_name, ln=True, align="C")
     
-    # "for successfully completing the course:"
+    pdf.set_y(config['completion_text_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "for successfully completing the course:", ln=True, align="C")
     
-    # Course Description
+    pdf.set_y(config['course_description_y'])
     pdf.set_font(config['font_name'], "I", config['font_size_default'])
     pdf.multi_cell(0, 10, course_description, align="C")
-    pdf.ln(5) 
     
-    # Course Date
+    pdf.set_y(config['date_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, f"Date: {course_date}", ln=True, align="C")
     
+    # Footer
+    pdf.set_y(-30)
+    pdf.set_font(config['font_name'], 'I', 10)
+    pdf.set_text_color(*config['footer_color'])
+    pdf.cell(0, 10, config['footer_text'], ln=True, align='C')
+
     pdf.output(output_path, "F")
 
 @app.route('/')
