@@ -2,13 +2,15 @@ import unittest
 import os
 import csv
 import shutil
+import re
 from io import BytesIO
+import PyPDF2
 
 # Add project root to sys.path to allow importing certificate_generator.app
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from certificate_generator.app import app, create_certificate
+from certificate_generator.app import app, create_certificate, generate_certificate_id
 
 # Helper CSV Data
 VALID_CSV_DATA_CONTENT = (
@@ -96,13 +98,19 @@ class TestCertificateGenerator(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Successfully generated all certificates!", response.data) 
         self.assertIn(b"Processed 2 rows.", response.data) 
-        self.assertIn(b"Alice_Smith_Python_Programming_certificate.pdf", response.data)
-        self.assertIn(b"Bob_Johnson_Advanced_Web_Development_certificate.pdf", response.data)
 
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("Alice_Smith_Python_Programming_certificate.pdf", generated_files)
-        self.assertIn("Bob_Johnson_Advanced_Web_Development_certificate.pdf", generated_files)
+
+        # Check if filenames match the expected pattern
+        # AS-Python_Programming-150123-XXXXXX.pdf
+        # BJ-Advanced_Web_Development-200223-XXXXXX.pdf
+
+        alice_pattern = re.compile(r"AS-Python_Programming-150123-\d{6}\.pdf")
+        bob_pattern = re.compile(r"BJ-Advanced_Web_Development-200223-\d{6}\.pdf")
+
+        self.assertTrue(any(alice_pattern.match(f) for f in generated_files))
+        self.assertTrue(any(bob_pattern.match(f) for f in generated_files))
 
     def test_upload_csv_missing_headers(self):
         data = {'csv_file': (BytesIO(CSV_MISSING_HEADER_CONTENT.encode('utf-8')), 'missing_headers.csv')}
@@ -127,22 +135,46 @@ class TestCertificateGenerator(unittest.TestCase):
         response = self.client.post('/upload', data=data, content_type='multipart/form-data', follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Successfully generated 2 PDF(s), but failed for 1 entries. See details below.', response.data)
-        self.assertIn(b"Row 2 (Person: N/A) - Missing data", response.data) # Corrected this line
+        self.assertIn(b"Row 2 (Person: N/A) - Missing data", response.data)
         
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
-        self.assertIn("Eve_Davis_Cybersecurity_Basics_certificate.pdf", generated_files)
-        self.assertIn("Frank_Green_Cloud_Computing_certificate.pdf", generated_files)
+
+        eve_pattern = re.compile(r"ED-Cybersecurity_Basics-010523-\d{6}\.pdf")
+        frank_pattern = re.compile(r"FG-Cloud_Computing-100623-\d{6}\.pdf")
+
+        self.assertTrue(any(eve_pattern.match(f) for f in generated_files))
+        self.assertTrue(any(frank_pattern.match(f) for f in generated_files))
 
 
     def test_create_certificate_function(self):
-        test_output_filename = "Test_User_Test_Course_certificate.pdf"
+        person_name = "Test User"
+        course_name = "Test Course"
+        course_date = "2023-10-26"
+        certificate_id = generate_certificate_id(person_name, course_name, course_date)
+        test_output_filename = f"{certificate_id}.pdf"
         test_output_path = os.path.join(self.test_generated_pdfs_folder, test_output_filename)
         
-        create_certificate("Test User", "Test Course", "A comprehensive test course.", "2023-10-26", test_output_path)
+        create_certificate(person_name, course_name, "A comprehensive test course.", course_date, certificate_id, test_output_path)
         
         self.assertTrue(os.path.exists(test_output_path))
-        self.assertTrue(os.path.getsize(test_output_path) > 0) 
+        self.assertTrue(os.path.getsize(test_output_path) > 0)
+
+    def test_pdf_content(self):
+        person_name = "Jane Doe"
+        course_name = "Advanced Python"
+        course_date = "2023-11-15"
+        certificate_id = generate_certificate_id(person_name, course_name, course_date)
+        test_output_filename = f"{certificate_id}.pdf"
+        test_output_path = os.path.join(self.test_generated_pdfs_folder, test_output_filename)
+
+        create_certificate(person_name, course_name, "Deep dive into Python.", course_date, certificate_id, test_output_path)
+
+        with open(test_output_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            page = reader.pages[0]
+            text = page.extract_text()
+            self.assertIn(f"Certificate ID: {certificate_id}", text)
 
 if __name__ == '__main__':
     unittest.main()
