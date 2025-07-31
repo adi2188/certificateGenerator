@@ -1,0 +1,12 @@
+{
+    "font_name": "Arial",
+    "font_size_course_name": 16,
+    "font_size_default": 12,
+    "font_size_person_name": 14,
+    "course_name_y": 20,
+    "award_text_y": 30,
+    "person_name_y": 40,
+    "completion_text_y": 50,
+    "course_description_y": 60,
+    "date_y": 75
+}
