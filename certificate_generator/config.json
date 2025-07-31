@@ -1,0 +1,18 @@
+{
+    "font_name": "Arial",
+    "font_size_course_name": 16,
+    "font_size_default": 12,
+    "font_size_person_name": 14,
+    "course_name_y": 80,
+    "award_text_y": 90,
+    "person_name_y": 100,
+    "completion_text_y": 110,
+    "course_description_y": 120,
+    "date_y": 135,
+    "background_color": [255, 255, 255],
+    "header_text": "Certificate of Completion",
+    "header_color": [0, 0, 0],
+    "footer_text": "Certified by ACME Inc.",
+    "footer_color": [0, 0, 0],
+    "background_image": "static/template.jpg"
+}
