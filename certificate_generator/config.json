@@ -12,7 +12,7 @@
     "background_color": [255, 255, 255],
     "header_text": "Certificate of Completion",
     "header_color": [0, 0, 0],
-    "footer_text": "Certified by ACME Inc.",
+    "footer_text": "Certified by Aditya Consultants",
     "footer_color": [0, 0, 0],
     "background_image": "static/template.jpg"
 }

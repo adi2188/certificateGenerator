@@ -62,7 +62,7 @@ def create_certificate(person_name, course_name, course_description, course_date
     
     pdf.set_y(config['completion_text_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
-    pdf.cell(0, 10, "for successfully completing the course:", ln=True, align="C")
+    pdf.cell(0, 10, "for successfully completing the course content:", ln=True, align="C")
     
     pdf.set_y(config['course_description_y'])
     pdf.set_font(config['font_name'], "I", config['font_size_default'])
