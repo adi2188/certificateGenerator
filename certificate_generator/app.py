@@ -4,6 +4,7 @@ import logging
 from flask import Flask, request, current_app, render_template, url_for, send_from_directory, flash, redirect
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
+import json
 
 app = Flask(__name__)
 app.secret_key = 'your secret key' # Needed for flashing messages
@@ -24,32 +25,35 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['GENERATED_PDFS_FOLDER'], exist_ok=True)
 
 def create_certificate(person_name, course_name, course_description, course_date, output_path):
+    with open(os.path.join(app.root_path, 'config.json')) as f:
+        config = json.load(f)
+
     pdf = FPDF()
     pdf.add_page()
     
     # Course Name
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 20, course_name, ln=True, align="C") 
+    pdf.set_font(config['font_name'], "B", config['font_size_course_name'])
+    pdf.cell(0, config['course_name_y'], course_name, ln=True, align="C")
     
     # "This certificate is awarded to:"
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "This certificate is awarded to:", ln=True, align="C")
     
     # Person's Name
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font(config['font_name'], "B", config['font_size_person_name'])
     pdf.cell(0, 10, person_name, ln=True, align="C")
     
     # "for successfully completing the course:"
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "for successfully completing the course:", ln=True, align="C")
     
     # Course Description
-    pdf.set_font("Arial", "I", 12)
+    pdf.set_font(config['font_name'], "I", config['font_size_default'])
     pdf.multi_cell(0, 10, course_description, align="C")
     pdf.ln(5) 
     
     # Course Date
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, f"Date: {course_date}", ln=True, align="C")
     
     pdf.output(output_path, "F")
