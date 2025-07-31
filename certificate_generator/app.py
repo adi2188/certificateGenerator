@@ -35,6 +35,11 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf.set_fill_color(*config['background_color'])
     pdf.rect(0, 0, 210, 297, 'F')
 
+    # Add background image
+    if 'background_image' in config and config['background_image']:
+        background_image_path = os.path.join(app.root_path, config['background_image'])
+        pdf.image(background_image_path, x=0, y=0, w=210, h=297)
+
     # Header
     pdf.set_y(20)
     pdf.set_font(config['font_name'], 'B', 20)
@@ -46,7 +51,7 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf.set_font(config['font_name'], "B", config['font_size_course_name'])
     pdf.set_text_color(0,0,0)
     pdf.cell(0, 10, course_name, ln=True, align="C")
-    
+
     pdf.set_y(config['award_text_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
     pdf.cell(0, 10, "This certificate is awarded to:", ln=True, align="C")

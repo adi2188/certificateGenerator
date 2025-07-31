@@ -13,5 +13,6 @@
     "header_text": "Certificate of Completion",
     "header_color": [0, 0, 0],
     "footer_text": "Certified by ACME Inc.",
-    "footer_color": [0, 0, 0]
+    "footer_color": [0, 0, 0],
+    "background_image": "static/template.jpg"
 }
