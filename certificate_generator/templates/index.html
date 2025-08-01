@@ -25,8 +25,19 @@
 
     <h1>Upload CSV for Certificate Generation</h1>
     <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
-        <label for="csv_file">Choose CSV file:</label>
-        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+        <div>
+            <label for="csv_file">Choose CSV file:</label>
+            <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+        </div>
+        <br>
+        <div>
+            <label for="instructor_pair">Instructor Pair:</label>
+            <select name="instructor_pair" id="instructor_pair" required>
+                <option value="DTK_RBB">DTK and RBB</option>
+                <option value="DTK_AA">DTK and AA</option>
+            </select>
+        </div>
+        <br>
         <button type="submit">Upload and Generate Certificates</button>
     </form>
 </body>

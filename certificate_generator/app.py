@@ -50,7 +50,7 @@ def generate_certificate_id(person_name, course_name, course_date):
 
     return f"{initials}-{sanitized_course_name}-{date_str}-{random_digits}"
 
-def create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path):
+def create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path, instructor_pair):
     with open(os.path.join(app.root_path, 'config.json')) as f:
         config = json.load(f)
 
@@ -61,9 +61,15 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf.set_fill_color(*config['background_color'])
     pdf.rect(0, 0, 210, 297, 'F')
 
-    # Add background image
-    if 'background_image' in config and config['background_image']:
-        background_image_path = os.path.join(app.root_path, config['background_image'])
+    # Determine background image based on instructor pair
+    image_mapping = {
+        'DTK_RBB': 'static/DTK_RBB.jpg',
+        'DTK_AA': 'static/DTK_AA.jpg'
+    }
+    background_image_name = image_mapping.get(instructor_pair, config.get('background_image', 'static/template.jpg'))
+    background_image_path = os.path.join(app.root_path, background_image_name)
+
+    if os.path.exists(background_image_path):
         pdf.image(background_image_path, x=0, y=0, w=210, h=297)
 
     # Header
@@ -76,7 +82,7 @@ def create_certificate(person_name, course_name, course_description, course_date
     pdf.set_y(config['course_name_y'])
     pdf.set_font(config['font_name'], "B", config['font_size_course_name'])
     pdf.set_text_color(0,0,0)
-    pdf.cell(0, 10, course_name, ln=True, align="C")
+    pdf.multi_cell(0, 10, course_name, align="C")
 
     pdf.set_y(config['award_text_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
@@ -92,7 +98,8 @@ def create_certificate(person_name, course_name, course_description, course_date
     
     pdf.set_y(config['course_description_y'])
     pdf.set_font(config['font_name'], "I", config['font_size_default'])
-    pdf.multi_cell(0, 10, course_description, align="C")
+    bulleted_description = "\n".join([f"* {line}" for line in course_description.splitlines()])
+    pdf.multi_cell(0, 10, bulleted_description, align="L")
     
     pdf.set_y(config['date_y'])
     pdf.set_font(config['font_name'], "", config['font_size_default'])
@@ -147,6 +154,7 @@ def upload_file():
         failed_certificates_info = []
         
         try:
+            instructor_pair = request.form.get('instructor_pair')
             with open(filepath, mode='r', encoding='utf-8-sig') as csvfile: # utf-8-sig to handle BOM
                 reader = csv.DictReader(csvfile)
                 
@@ -181,7 +189,7 @@ def upload_file():
                     output_filename = f"{certificate_id}.pdf"
                     output_path = os.path.join(app.config['GENERATED_PDFS_FOLDER'], output_filename)
                     
-                    create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path)
+                    create_certificate(person_name, course_name, course_description, course_date, certificate_id, output_path, instructor_pair)
                     generated_filenames_list.append(output_filename)
                     logger.info(f"Generated certificate: {output_filename}")
 
