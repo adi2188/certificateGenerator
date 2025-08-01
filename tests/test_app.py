@@ -15,22 +15,23 @@ from certificate_generator.app import app, create_certificate, generate_certific
 # Helper CSV Data
 VALID_CSV_DATA_CONTENT = (
     "Person Name,Course Name,Course Description,Course Date\n"
-    "Alice Smith,Python Programming,Learn Python basics,2023-01-15\n"
-    "Bob Johnson,Advanced Web Development,Master front-end and back-end,2023-02-20\n"
+    "Alice Smith,Python Programming,Learn Python basics,2023-01-15:2023-01-17\n"
+    'Bob Johnson,"Advanced Web Development",Master front-end and back-end,2023-02-20:2023-02-22\n'
+    'Carol White,"Intro to ML\nwith newlines",Learn machine learning,2023-03-10:2023-03-12\n'
 )
 
 CSV_MISSING_HEADER_CONTENT = (
     "Person Name,Course Description,Course Date\n" # Missing "Course Name"
-    "Charlie Brown,Data Science Fundamentals,Introduction to ML,2023-03-10\n"
+    "Charlie Brown,Data Science Fundamentals,Introduction to ML,2023-03-10:2023-03-12\n"
 )
 
 EMPTY_CSV_CONTENT = "Person Name,Course Name,Course Description,Course Date\n" # Headers only
 
 CSV_WITH_EMPTY_ROW_CONTENT = (
     "Person Name,Course Name,Course Description,Course Date\n"
-    "Eve Davis,Cybersecurity Basics,Intro to security,2023-05-01\n"
+    "Eve Davis,Cybersecurity Basics,Intro to security,2023-05-01:2023-05-03\n"
     ",,, \n" # Empty row (Person Name will be empty string, but app.py defaults to 'N/A' for message)
-    "Frank Green,Cloud Computing,AWS and Azure,2023-06-10\n"
+    "Frank Green,Cloud Computing,AWS and Azure,2023-06-10:2023-06-12\n"
 )
 
 
@@ -100,20 +101,23 @@ class TestCertificateGenerator(unittest.TestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Successfully generated all certificates!", response.data) 
-        self.assertIn(b"Processed 2 rows.", response.data) 
+        self.assertIn(b"Processed 3 rows.", response.data)
 
         generated_files = os.listdir(self.test_generated_pdfs_folder)
-        self.assertEqual(len(generated_files), 2)
+        self.assertEqual(len(generated_files), 3)
 
         # Check if filenames match the expected pattern
-        # AS-Python_Programming-150123-XXXXXX.pdf
-        # BJ-Advanced_Web_Development-200223-XXXXXX.pdf
+        # AS-PythonPr-150123-XXXXXX.pdf
+        # BJ-Advanced-200223-XXXXXX.pdf
+        # CW-IntrotoM-100323-XXXXXX.pdf
 
-        alice_pattern = re.compile(r"AS-Python_Programming-150123-\d{6}\.pdf")
-        bob_pattern = re.compile(r"BJ-Advanced_Web_Development-200223-\d{6}\.pdf")
+        alice_pattern = re.compile(r"AS-PythonPr-150123-\d{6}\.pdf")
+        bob_pattern = re.compile(r"BJ-Advanced-200223-\d{6}\.pdf")
+        carol_pattern = re.compile(r"CW-IntrotoM-100323-\d{6}\.pdf")
 
         self.assertTrue(any(alice_pattern.match(f) for f in generated_files))
         self.assertTrue(any(bob_pattern.match(f) for f in generated_files))
+        self.assertTrue(any(carol_pattern.match(f) for f in generated_files))
 
     def test_upload_csv_missing_headers(self):
         data = {
@@ -152,17 +156,33 @@ class TestCertificateGenerator(unittest.TestCase):
         generated_files = os.listdir(self.test_generated_pdfs_folder)
         self.assertEqual(len(generated_files), 2)
 
-        eve_pattern = re.compile(r"ED-Cybersecurity_Basics-010523-\d{6}\.pdf")
-        frank_pattern = re.compile(r"FG-Cloud_Computing-100623-\d{6}\.pdf")
+        eve_pattern = re.compile(r"ED-Cybersec-010523-\d{6}\.pdf")
+        frank_pattern = re.compile(r"FG-CloudCom-100623-\d{6}\.pdf")
 
         self.assertTrue(any(eve_pattern.match(f) for f in generated_files))
         self.assertTrue(any(frank_pattern.match(f) for f in generated_files))
+
+    def test_generate_certificate_id_with_date_range_and_sanitization(self):
+        """Test the new certificate ID generation logic."""
+        person_name = "Test User"
+        course_name = "This is a very long course name\n with newlines"
+        course_date = "2024-06-12:2024-06-14"
+
+        certificate_id = generate_certificate_id(person_name, course_name, course_date)
+
+        # Expected: TU-Thisisav-120624-RANDOM
+        parts = certificate_id.split('-')
+        self.assertEqual(parts[0], "TU")
+        self.assertEqual(parts[1], "Thisisav")
+        self.assertEqual(parts[2], "120624")
+        self.assertTrue(parts[3].isdigit())
+        self.assertEqual(len(parts[3]), 6)
 
 
     def test_create_certificate_function(self):
         person_name = "Test User"
         course_name = "Test Course"
-        course_date = "2023-10-26"
+        course_date = "2023-10-26:2023-10-28"
         certificate_id = generate_certificate_id(person_name, course_name, course_date)
         test_output_filename = f"{certificate_id}.pdf"
         test_output_path = os.path.join(self.test_generated_pdfs_folder, test_output_filename)
@@ -175,7 +195,7 @@ class TestCertificateGenerator(unittest.TestCase):
     def test_pdf_content(self):
         person_name = "Jane Doe"
         course_name = "Advanced Python"
-        course_date = "2023-11-15"
+        course_date = "2023-11-15:2023-11-17"
         certificate_id = generate_certificate_id(person_name, course_name, course_date)
         test_output_filename = f"{certificate_id}.pdf"
         test_output_path = os.path.join(self.test_generated_pdfs_folder, test_output_filename)
@@ -187,12 +207,13 @@ class TestCertificateGenerator(unittest.TestCase):
             page = reader.pages[0]
             text = page.extract_text()
             self.assertIn(f"Certificate ID: {certificate_id}", text)
+            self.assertIn(f"Date: {course_date}", text)
 
     def test_pdf_content_updates(self):
         person_name = "John Smith"
         course_name = "A Very Long Course Name That Should Wrap To a New Line"
         course_description = "First line.\nSecond line."
-        course_date = "2024-01-01"
+        course_date = "2024-01-01:2024-01-03"
         instructor_pair = "DTK_AA"
         certificate_id = generate_certificate_id(person_name, course_name, course_date)
         test_output_filename = f"{certificate_id}.pdf"

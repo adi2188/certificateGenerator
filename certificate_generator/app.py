@@ -29,13 +29,20 @@ os.makedirs(app.config['GENERATED_PDFS_FOLDER'], exist_ok=True)
 def generate_certificate_id(person_name, course_name, course_date):
     """Generates a unique certificate ID."""
     initials = "".join(part[0] for part in person_name.split()).upper()
-    sanitized_course_name = course_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+
+    # Sanitize course name: remove newlines, then other non-alphanumeric chars, and shorten
+    sanitized_course_name = course_name.replace("\n", " ").replace("\r", "")
+    sanitized_course_name = "".join(filter(str.isalnum, sanitized_course_name))
+    sanitized_course_name = sanitized_course_name[:8]
+
+    # Use the first date from the date range for the ID
+    first_date_str = course_date.split(':')[0]
 
     # Attempt to parse date from multiple formats
     date_obj = None
     for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%m/%d/%Y'):
         try:
-            date_obj = datetime.strptime(course_date, fmt)
+            date_obj = datetime.strptime(first_date_str, fmt)
             break
         except ValueError:
             pass
