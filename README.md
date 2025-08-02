@@ -97,8 +97,8 @@ The application expects a CSV file with the following headers in the first row:
 **Example CSV:**
 ```csv
 Person Name,Course Name,Course Description,Course Date
-Alice Smith,Python Programming,Learn Python basics,2023-01-15
-Bob Johnson,Advanced Web Development,Master front-end and back-end,2023-02-20
+Alice Smith,Python Programming,Learn Python basics,2023-01-15:2023-01-16
+Bob Johnson,Advanced Web Development,Master front-end and back-end,2023-02-20:2023-02-22
 ```
 
 ## Usage
